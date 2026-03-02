@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HR Intelligence Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon"><i class="fas fa-chart-bar"></i></div>
+    <div class="brand-text">
+      <span class="brand-title">HR Intelligence</span>
+      <span class="brand-sub">Live Dashboard</span>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <span class="nav-label">Analytics</span>
+    <a class="nav-item active" data-section="overview"    href="#"><i class="fas fa-gauge-high"></i><span>Overview</span></a>
+    <a class="nav-item"        data-section="workforce"   href="#"><i class="fas fa-users"></i><span>Workforce</span></a>
+    <a class="nav-item"        data-section="recruitment" href="#"><i class="fas fa-user-plus"></i><span>Recruitment</span></a>
+    <a class="nav-item"        data-section="performance" href="#"><i class="fas fa-star"></i><span>Performance</span></a>
+    <a class="nav-item"        data-section="engagement"  href="#"><i class="fas fa-heart-pulse"></i><span>Engagement</span></a>
+    <a class="nav-item"        data-section="learning"    href="#"><i class="fas fa-graduation-cap"></i><span>Learning &amp; Dev</span></a>
+    <a class="nav-item"        data-section="diversity"   href="#"><i class="fas fa-people-group"></i><span>Diversity</span></a>
+
+    <span class="nav-label" style="margin-top:1.5rem">Controls</span>
+    <a class="nav-item" href="#" id="liveToggleBtn"><i class="fas fa-rss"></i><span>Live Mode</span><span class="live-badge" id="liveBadge">OFF</span></a>
+    <a class="nav-item" href="#" id="uploadNavBtn"><i class="fas fa-file-excel"></i><span>Load Excel</span></a>
+    <a class="nav-item" href="data/hr_sample_data.xlsx" download><i class="fas fa-download"></i><span>Template</span></a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="data-source-label" id="dataSourceLabel"><i class="fas fa-database"></i> Sample Data</div>
+    <div class="last-updated" id="lastUpdated"></div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main-content" id="mainContent">
+
+  <header class="topbar">
+    <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+    <div class="topbar-title">
+      <h1 id="sectionTitle">Executive Overview</h1>
+      <p id="sectionDesc">All key HR metrics connected to business value</p>
+    </div>
+    <div class="topbar-actions">
+      <select id="deptFilter" class="dept-filter"><option value="all">All Departments</option></select>
+      <button class="btn-upload" id="uploadBtn"><i class="fas fa-file-excel"></i> Load Excel</button>
+      <div class="live-dot hidden" id="liveDot"><span class="pulse"></span>LIVE</div>
+    </div>
+  </header>
+
+  <input type="file" id="fileInput" accept=".xlsx,.xls" hidden />
+  <div class="toast hidden" id="toast"></div>
+
+  <!-- ─── OVERVIEW ─────────────────────────────────────────── -->
+  <section class="dash-section" id="sec-overview">
+    <div class="bv-banner">
+      <div class="bv-banner-icon"><i class="fas fa-sack-dollar"></i></div>
+      <div class="bv-banner-text">
+        <div class="bv-banner-title">Total HR Business Value</div>
+        <div class="bv-banner-sub">Based on current KPIs vs industry benchmarks</div>
+      </div>
+      <div class="bv-stats">
+        <div class="bv-stat"><span class="bv-label">Revenue Premium</span><span class="bv-val green" id="bvRevPremium">—</span></div>
+        <div class="bv-stat"><span class="bv-label">Cost Reduction Potential</span><span class="bv-val amber" id="bvCostReduce">—</span></div>
+        <div class="bv-stat"><span class="bv-label">Engagement Value</span><span class="bv-val green" id="bvEngValue">—</span></div>
+      </div>
+    </div>
+    <div class="kpi-grid" id="kpiGrid"></div>
+    <div class="chart-row">
+      <div class="chart-card colspan-2">
+        <div class="chart-hdr"><h3>KPI Trend Overview <span class="sub">Last 12 Months</span></h3></div>
+        <canvas id="overviewChart" height="110"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-hdr"><h3>Headcount by Dept</h3></div>
+        <canvas id="headcountDeptChart" height="220"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── WORKFORCE ─────────────────────────────────────────── -->
+  <section class="dash-section hidden" id="sec-workforce">
+    <div class="section-header"><h2>Workforce Analytics</h2><p>Headcount, turnover and retention</p></div>
+    <div class="kpi-grid" id="workforceGrid"></div>
+    <div class="bv-panel" id="workforceBvPanel"></div>
+    <div class="chart-row">
+      <div class="chart-card colspan-2">
+        <div class="chart-hdr"><h3>Turnover Rate <span class="sub">vs Target &amp; Benchmark</span></h3></div>
+        <canvas id="turnoverChart" height="120"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-hdr"><h3>Headcount Growth</h3></div>
+        <canvas id="headcountTrendChart" height="220"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── RECRUITMENT ──────────────────────────────────────── -->
+  <section class="dash-section hidden" id="sec-recruitment">
+    <div class="section-header"><h2>Recruitment Analytics</h2><p>Hiring speed, cost, quality &amp; offer acceptance</p></div>
+    <div class="kpi-grid" id="recruitmentGrid"></div>
+    <div class="bv-panel" id="recruitmentBvPanel"></div>
+    <div class="chart-row">
+      <div class="chart-card">
+        <div class="chart-hdr"><h3>Time to Hire <span class="sub">days</span></h3></div>
+        <canvas id="tthChart" height="220"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-hdr"><h3>Cost per Hire <span class="sub">$</span></h3></div>
+        <canvas id="cphChart" height="220"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-hdr"><h3>Hires by Department</h3></div>
+        <canvas id="hiresDeptChart" height="220"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── PERFORMANCE ──────────────────────────────────────── -->
+  <section class="dash-section hidden" id="sec-performance">
+    <div class="section-header"><h2>Performance Analytics</h2><p>Ratings, productivity &amp; revenue per employee</p></div>
+    <div class="kpi-grid" id="performanceGrid"></div>
+    <div class="bv-panel" id="performanceBvPanel"></div>
+    <div class="chart-row">
+      <div class="chart-card">
+        <div class="chart-hdr"><h3>Performance Distribution</h3></div>
+        <canvas id="perfDistChart" height="230"></canvas>
+      </div>
+      <div class="chart-card colspan-2">
+        <div class="chart-hdr"><h3>Revenue per Employee <span class="sub">vs Benchmark</span></h3></div>
+        <canvas id="rpeChart" height="120"></canvas>
+      </div>
+    </div>
+    <div class="chart-row">
+      <div class="chart-card colspan-2">
+        <div class="chart-hdr"><h3>Performance Score Trend <span class="sub">1–5 scale</span></h3></div>
+        <canvas id="perfTrendChart" height="110"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-hdr"><h3>Avg Score by Department</h3></div>
+        <canvas id="perfDeptChart" height="230"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── ENGAGEMENT ───────────────────────────────────────── -->
+  <section class="dash-section hidden" id="sec-engagement">
+    <div class="section-header"><h2>Engagement &amp; Wellbeing</h2><p>Engagement score, eNPS &amp; absenteeism</p></div>
+    <div class="kpi-grid" id="engagementGrid"></div>
+    <div class="bv-panel" id="engagementBvPanel"></div>
+    <div class="chart-row">
+      <div class="chart-card colspan-2">
+        <div class="chart-hdr"><h3>Engagement Score Trend <span class="sub">vs Target &amp; Benchmark</span></h3></div>
+        <canvas id="engagementChart" height="110"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-hdr"><h3>Absenteeism Rate <span class="sub">%</span></h3></div>
+        <canvas id="absenteeismChart" height="220"></canvas>
+      </div>
+    </div>
+    <div class="chart-row">
+      <div class="chart-card">
+        <div class="chart-hdr"><h3>Absenteeism by Department</h3></div>
+        <canvas id="absentDeptChart" height="230"></canvas>
+      </div>
+      <div class="chart-card colspan-2">
+        <div class="chart-hdr"><h3>eNPS Trend <span class="sub">Employee Net Promoter Score</span></h3></div>
+        <canvas id="enpsChart" height="120"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── LEARNING & DEV ───────────────────────────────────── -->
+  <section class="dash-section hidden" id="sec-learning">
+    <div class="section-header"><h2>Learning &amp; Development</h2><p>Training ROI, completion &amp; skill improvement</p></div>
+    <div class="kpi-grid" id="learningGrid"></div>
+    <div class="bv-panel" id="learningBvPanel"></div>
+    <div class="chart-row">
+      <div class="chart-card colspan-2">
+        <div class="chart-hdr"><h3>Training ROI <span class="sub">%</span></h3></div>
+        <canvas id="trainingRoiChart" height="110"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-hdr"><h3>Completion Rate <span class="sub">%</span></h3></div>
+        <canvas id="completionChart" height="220"></canvas>
+      </div>
+    </div>
+    <div class="chart-row">
+      <div class="chart-card">
+        <div class="chart-hdr"><h3>Pre vs Post Training Scores</h3></div>
+        <canvas id="prePostChart" height="230"></canvas>
+      </div>
+      <div class="chart-card colspan-2">
+        <div class="chart-hdr"><h3>Training Hours per Employee</h3></div>
+        <canvas id="trainingHrsChart" height="120"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── DIVERSITY ────────────────────────────────────────── -->
+  <section class="dash-section hidden" id="sec-diversity">
+    <div class="section-header"><h2>Diversity &amp; Inclusion</h2><p>Gender, age &amp; level representation</p></div>
+    <div class="kpi-grid" id="diversityGrid"></div>
+    <div class="bv-panel" id="diversityBvPanel"></div>
+    <div class="chart-row">
+      <div class="chart-card">
+        <div class="chart-hdr"><h3>Gender Split</h3></div>
+        <canvas id="genderChart" height="250"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-hdr"><h3>Age Distribution</h3></div>
+        <canvas id="ageChart" height="250"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-hdr"><h3>Level Distribution</h3></div>
+        <canvas id="levelChart" height="250"></canvas>
+      </div>
+    </div>
+    <div class="chart-row">
+      <div class="chart-card colspan-2">
+        <div class="chart-hdr"><h3>Gender Split by Department</h3></div>
+        <canvas id="genderDeptChart" height="130"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-hdr"><h3>Gender by Career Level</h3></div>
+        <canvas id="genderLevelChart" height="250"></canvas>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- UPLOAD MODAL -->
+<div class="modal-overlay hidden" id="modal">
+  <div class="modal-box">
+    <button class="modal-close" id="modalClose"><i class="fas fa-times"></i></button>
+    <div class="modal-icon"><i class="fas fa-file-excel"></i></div>
+    <h2>Load HR Excel Data</h2>
+    <p>Upload a file matching the template structure.<br/>
+       Required sheets: <strong>KPI_Summary · Employees · Recruitment · Attendance · Training · Business_Config</strong></p>
+    <div class="drop-zone" id="dropZone">
+      <i class="fas fa-cloud-arrow-up"></i>
+      <p>Drag &amp; drop your .xlsx here</p>
+      <p class="drop-sub">or <span class="drop-link" id="dropLink">click to browse</span></p>
+    </div>
+    <div class="modal-actions">
+      <a class="btn-secondary" href="data/hr_sample_data.xlsx" download><i class="fas fa-download"></i> Download Template</a>
+      <button class="btn-primary" id="useSampleBtn"><i class="fas fa-play"></i> Use Sample Data</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
